@@ -105,3 +105,108 @@ def create_bot():
         }
 
         return data, 400
+
+
+@api_bots.route('/bots/<int:id>')
+def get_bot(id):
+    bot = Bot.query.filter_by(id=id).one_or_none()
+
+    if bot is not None:
+        data = BotSchema().dump(bot)
+
+        return data, 200
+    else:
+        data = {
+            'title': 'Not Found',
+            'status': 404,
+            'detail': f'Bot {id} not found'
+        }
+
+        return data, 404
+
+
+@api_bots.route('/bots/<int:id>', methods=['PUT'])
+def update_enrolment(id):
+    keys = [
+        'name',
+        'discriminator',
+        'display_name',
+        'user_id',
+        'cohort_id',
+        'msg_id'
+    ]
+
+    if all(key in keys for key in request.json):
+        existing_bot = Bot.query.filter_by(id=id).one_or_none()
+
+        if existing_bot is not None:
+            bot_schema = BotSchema()
+
+            try:
+                bot = bot_schema.load(request.json)
+            except Exception as _:
+                data = {
+                    'title': 'Bad Request',
+                    'status': 400,
+                    'detail': 'Some values failed validation'
+                }
+
+                return data, 400
+            else:
+                bot.id = existing_bot.id
+                db_session.merge(bot)
+
+                try:
+                    db_session.commit()
+                except exc.IntegrityError as _:
+                    data = {
+                        'title': 'Bad Request',
+                        'status': 400,
+                        'detail': 'Some values failed validation'
+                    }
+
+                    return data, 400
+                else:
+                    data = bot_schema.dump(existing_bot)
+
+                    return data, 200
+        else:
+            data = {
+                'title': 'Not Found',
+                'status': 404,
+                'detail': f'Bot {id} not found'
+            }
+
+            return data, 404
+    else:
+        data = {
+            'title': 'Bad Request',
+            'status': 400,
+            'detail': 'Missing some keys or contains extra keys'
+        }
+
+        return data, 400
+
+
+@api_bots.route('/bots/<int:id>', methods=['DELETE'])
+def delete_bot(id):
+    bot = Bot.query.filter_by(id=id).one_or_none()
+
+    if bot is not None:
+        db_session.delete(bot)
+        db_session.commit()
+        data = {
+            'title': 'OK',
+            'status': 200,
+            'detail': f'Bot {id} deleted'
+        }
+
+        return data, 200
+    else:
+        data = {
+            'title': 'Not Found',
+            'status': 404,
+            'detail': f'Bot {id} not found'
+        }
+
+        return data, 404
