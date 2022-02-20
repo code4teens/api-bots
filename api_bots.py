@@ -126,7 +126,7 @@ def get_bot(id):
 
 
 @api_bots.route('/bots/<int:id>', methods=['PUT'])
-def update_enrolment(id):
+def update_bot(id):
     keys = [
         'name',
         'discriminator',
